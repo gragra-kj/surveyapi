@@ -37,11 +37,20 @@ class ResponseModels(models.Model):
         if self.user:
             return f"Response by {self.user.username} on {self.survey.title}"
         return f"Anonymous response to {self.survey.title}"
+class Choice(models.Model):
+    question = models.ForeignKey(QuestionModels, on_delete=models.CASCADE, related_name='choices')
+    text = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.text} (Q: {self.question.text[:30]}...)"        
     
 class AnswerModels(models.Model):
     response=models.ForeignKey(ResponseModels,on_delete=models.CASCADE,related_name="answers")
     question=models.ForeignKey(QuestionModels,on_delete=models.CASCADE, related_name="answers")
+    selected_choice = models.ForeignKey(Choice, on_delete=models.SET_NULL, null=True, blank=True)
     answer_text=models.TextField()
     #surveyor=models.ForeignKey(User,on_delete=models.CASCADE)   
     def __str__(self):
         return f"Answer to: {self.question.text}"        
+
+
