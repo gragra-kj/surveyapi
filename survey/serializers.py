@@ -1,4 +1,4 @@
-from .models import SurveyModels,QuestionModels,ResponseModels,AnswerModels,Choice
+from .models import SurveyModel,QuestionModel,ResponseModel,AnswerModel,Choice
 
 from rest_framework import  serializers
 from django.contrib.auth.models import User
@@ -10,24 +10,26 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SurveySerializer(serializers.ModelSerializer):
     class Meta:
-        model=SurveyModels
+        model=SurveyModel
         fields=['id','title','description','created_at']
         
-        
-class QuestionSerializers(serializers.ModelSerializer):
-    class Meta:
-        model=QuestionModels
-        fields=['id','survey','question_type']
-        
 class ChoiceSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Choice
-        fields = ['id', 'question', 'text']
+        fields = ['id', 'question', 'text']        
+class QuestionSerializer(serializers.ModelSerializer):
+    choices = ChoiceSerializer(many=True, read_only=True, source='choice_set')
+    class Meta:
+        model=QuestionModel
+        fields=['id','survey','question_type','text','choices']
+        
+
              
 class ResponseSerializer(serializers.ModelSerializer):
     user=UserSerializer(read_only=True)
     class Meta:
-        model=ResponseModels
+        model=ResponseModel
         fields=['id','user','survey','submitted_at']
         
     def create(self, validated_data):
@@ -38,9 +40,18 @@ class ResponseSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
         
-class AnswerSerializers(serializers.ModelSerializer):
+class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
-        model=AnswerModels
-        fields=['id','response','answer_text','question','selected_choice']   
+        model = AnswerModel
+        fields = ['id', 'response', 'question', 'selected_choice', 'answer_text']
+
+    def validate(self, data):
+        question = data.get('question')
+        selected_choice = data.get('selected_choice')
+
+        if selected_choice and selected_choice.question != question:
+            raise serializers.ValidationError("Selected choice does not belong to the given question.")
+
+        return data    
         
                   

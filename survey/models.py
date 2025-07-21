@@ -9,27 +9,47 @@ QUESTION_TYPES = [
 ]
 
 
-class SurveyModels(models.Model):
+class SurveyModel(models.Model):
     title=models.CharField(max_length=100)
     description=models.TextField()
     created_at=models.DateTimeField(auto_now_add=True)
     is_active=models.BooleanField(default=True)
     
     def __str__(self):
-        return {self.title}
+        return self.title
         
     
-class QuestionModels(models.Model):
-    survey=models.ForeignKey(SurveyModels,on_delete=models.CASCADE,related_name='questions')
-    text=models.TextField(max_length=500)
-    question_type=models.CharField(max_length=60,choices=QUESTION_TYPES,default=text)
-    required=models.BooleanField(default=True)
+# class QuestionModel(models.Model):
+#     TEXT = 'text'
+#     MULTIPLE_CHOICE = 'mcq'
+
+#     QUESTION_TYPES = [
+#         (TEXT, 'Text'),
+#         (MULTIPLE_CHOICE, 'Multiple Choice'),
+#     ]
+
+#     survey = models.ForeignKey(SurveyModel, on_delete=models.CASCADE)
+#     text = models.CharField(max_length=255)
+#     question_type = models.CharField(max_length=10, choices=QUESTION_TYPES, default=TEXT)
+
+#     def __str__(self):
+#         return self.text
+
+class QuestionModel(models.Model):
+    TEXT = 'text'
+    MULTIPLE_CHOICE = 'multiple_choice'
+
+    QUESTION_TYPES = [
+        (TEXT, 'Text'),
+        (MULTIPLE_CHOICE, 'Multiple Choice'),
+    ]
+
+    survey = models.ForeignKey(SurveyModel, on_delete=models.CASCADE)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    question_text = models.TextField()
     
-    def __str__(self):
-        return self.text
-    
-class ResponseModels(models.Model):
-    survey=models.ForeignKey(SurveyModels,on_delete=models.CASCADE,related_name="responses")
+class ResponseModel(models.Model):
+    survey=models.ForeignKey(SurveyModel,on_delete=models.CASCADE,related_name="responses")
     submitted_at=models.DateTimeField(auto_now_add=True)
     #respondent=models.CharField(max_length=255, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -38,19 +58,27 @@ class ResponseModels(models.Model):
             return f"Response by {self.user.username} on {self.survey.title}"
         return f"Anonymous response to {self.survey.title}"
 class Choice(models.Model):
-    question = models.ForeignKey(QuestionModels, on_delete=models.CASCADE, related_name='choices')
+    question = models.ForeignKey(QuestionModel, on_delete=models.CASCADE, related_name='choices')
     text = models.CharField(max_length=255)
 
     def __str__(self):
         return f"{self.text} (Q: {self.question.text[:30]}...)"        
     
-class AnswerModels(models.Model):
-    response=models.ForeignKey(ResponseModels,on_delete=models.CASCADE,related_name="answers")
-    question=models.ForeignKey(QuestionModels,on_delete=models.CASCADE, related_name="answers")
+class AnswerModel(models.Model):
+    response = models.ForeignKey(ResponseModel, on_delete=models.CASCADE)
+    question = models.ForeignKey(QuestionModel, on_delete=models.CASCADE)
     selected_choice = models.ForeignKey(Choice, on_delete=models.SET_NULL, null=True, blank=True)
-    answer_text=models.TextField()
+    answer_text = models.TextField(blank=True, null=True)
+    # response=models.ForeignKey(ResponseModel,on_delete=models.CASCADE,related_name="answers")
+    # question=models.ForeignKey(QuestionModel,on_delete=models.CASCADE, related_name="answers")
+    # selected_choice = models.ForeignKey(Choice, on_delete=models.SET_NULL, null=True, blank=True)
+    # answer_text=models.TextField()
     #surveyor=models.ForeignKey(User,on_delete=models.CASCADE)   
     def __str__(self):
-        return f"Answer to: {self.question.text}"        
+        if self.choice:
+            return f"{self.question.text} -> {self.choice.text}"
+        elif self.answer_text:
+            return f"{self.question.text} -> {self.answer_text}"
+        return f"{self.question.text} -> No Answer"     
 
 
