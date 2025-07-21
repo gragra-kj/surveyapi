@@ -46,8 +46,10 @@ class QuestionModel(models.Model):
 
     survey = models.ForeignKey(SurveyModel, on_delete=models.CASCADE)
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
-    question_text = models.TextField()
+    text = models.TextField()
     
+    def __str__(self):
+        return self.text
 class ResponseModel(models.Model):
     survey=models.ForeignKey(SurveyModel,on_delete=models.CASCADE,related_name="responses")
     submitted_at=models.DateTimeField(auto_now_add=True)
